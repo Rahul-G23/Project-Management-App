@@ -114,9 +114,90 @@ const deleteProject = async (req, res) => {
   }
 };
 
+const addMember = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Member email is required",
+      });
+    }
+
+    const User = require("../models/User");
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const project = await Project.findOne({
+      _id: req.params.id,
+      owner: req.user.userId,
+    });
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found or you are not the owner",
+      });
+    }
+
+    if (project.members.includes(user._id)) {
+      return res.status(409).json({
+        message: "User is already a project member",
+      });
+    }
+
+    project.members.push(user._id);
+
+    await project.save();
+
+    res.status(200).json({
+      message: "Member added successfully",
+      project,
+    });
+  } catch (error) {
+    console.error("Add member error:", error.message);
+
+    res.status(500).json({
+      message: "Server error while adding member",
+    });
+  }
+};
+
+const getProjectMembers = async (req, res) => {
+  try {
+    const project = await Project.findOne({
+      _id: req.params.id,
+      members: req.user.userId,
+    }).populate("members", "name email");
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found or you are not a member",
+      });
+    }
+
+    res.status(200).json({
+      members: project.members,
+    });
+  } catch (error) {
+    console.error("Get project members error:", error.message);
+
+    res.status(500).json({
+      message: "Server error while fetching project members",
+    });
+  }
+};
+
 module.exports = {
   createProject,
   getProjects,
   updateProject,
   deleteProject,
+  addMember,
+  getProjectMembers,
 };
