@@ -5,6 +5,8 @@ import {
   createProject,
   updateProject,
   deleteProject,
+  getProjectMembers,
+  addProjectMember,
 } from "../services/projectService";
 
 import {
@@ -24,11 +26,15 @@ function Dashboard() {
 
   const [selectedProject, setSelectedProject] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [members, setMembers] = useState([]);
+
+  const [memberEmail, setMemberEmail] = useState("");
 
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [taskPriority, setTaskPriority] = useState("MEDIUM");
   const [taskDueDate, setTaskDueDate] = useState("");
+  const [taskAssignedTo, setTaskAssignedTo] = useState("");
 
   const fetchProjects = async () => {
     try {
@@ -77,14 +83,53 @@ function Dashboard() {
     setSuccess("");
 
     try {
-      const data = await getTasks(project._id);
+      const [taskData, memberData] = await Promise.all([
+        getTasks(project._id),
+        getProjectMembers(project._id),
+      ]);
 
       setSelectedProject(project);
-      setTasks(data.tasks);
+      setTasks(taskData.tasks);
+      setMembers(memberData.members);
+      setTaskAssignedTo("");
     } catch (error) {
       setError(
         error.response?.data?.message ||
-          "Failed to load tasks. Please try again."
+          "Failed to load project details. Please try again."
+      );
+    }
+  };
+
+  const handleAddMember = async (event) => {
+    event.preventDefault();
+
+    setError("");
+    setSuccess("");
+
+    if (!selectedProject) {
+      setError("Please select a project first.");
+      return;
+    }
+
+    try {
+      await addProjectMember(
+        selectedProject._id,
+        memberEmail
+      );
+
+      setMemberEmail("");
+
+      setSuccess("Member added successfully.");
+
+      const data = await getProjectMembers(
+        selectedProject._id
+      );
+
+      setMembers(data.members);
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Failed to add member. Please try again."
       );
     }
   };
@@ -141,6 +186,7 @@ function Dashboard() {
       if (selectedProject?._id === project._id) {
         setSelectedProject(null);
         setTasks([]);
+        setMembers([]);
       }
 
       await fetchProjects();
@@ -170,12 +216,14 @@ function Dashboard() {
         project: selectedProject._id,
         priority: taskPriority,
         dueDate: taskDueDate || undefined,
+        assignedTo: taskAssignedTo || null,
       });
 
       setTaskTitle("");
       setTaskDescription("");
       setTaskPriority("MEDIUM");
       setTaskDueDate("");
+      setTaskAssignedTo("");
 
       setSuccess("Task created successfully.");
 
@@ -217,6 +265,27 @@ function Dashboard() {
     }
   };
 
+  const handleStatusChange = async (task, newStatus) => {
+    setError("");
+    setSuccess("");
+
+    try {
+      await updateTask(task._id, {
+        status: newStatus,
+      });
+
+      const data = await getTasks(selectedProject._id);
+      setTasks(data.tasks);
+
+      setSuccess("Task status updated successfully.");
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Failed to update task status."
+      );
+    }
+  };
+
   const handleDeleteTask = async (task) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${task.title}"?`
@@ -229,11 +298,12 @@ function Dashboard() {
     try {
       await deleteTask(task._id);
 
-      setSuccess("Task deleted successfully.");
       setError("");
 
       const data = await getTasks(selectedProject._id);
       setTasks(data.tasks);
+
+      setSuccess("Task deleted successfully.");
     } catch (error) {
       setError(
         error.response?.data?.message ||
@@ -241,6 +311,17 @@ function Dashboard() {
       );
     }
   };
+
+  const totalTasks = tasks.length;
+
+  const completedTasks = tasks.filter(
+    (task) => task.status === "COMPLETED"
+  ).length;
+
+  const progress =
+    totalTasks === 0
+      ? 0
+      : Math.round((completedTasks / totalTasks) * 100);
 
   return (
     <div>
@@ -335,6 +416,77 @@ function Dashboard() {
             Tasks for {selectedProject.name}
           </h2>
 
+          <h3>Project Progress</h3>
+
+          <p>
+            {completedTasks} of {totalTasks} tasks
+            completed
+          </p>
+
+          <p>
+            <strong>{progress}%</strong>
+          </p>
+
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "500px",
+              height: "20px",
+              backgroundColor: "#e5e7eb",
+              borderRadius: "10px",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${progress}%`,
+                height: "100%",
+                backgroundColor: "#22c55e",
+                transition: "width 0.3s ease",
+              }}
+            />
+          </div>
+
+          <h3>Project Members</h3>
+
+          {members.length === 0 ? (
+            <p>No members found.</p>
+          ) : (
+            <div>
+              {members.map((member) => (
+                <div key={member._id}>
+                  <p>
+                    <strong>{member.name}</strong>
+                    <br />
+                    {member.email}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <h3>Add Member</h3>
+
+          <form onSubmit={handleAddMember}>
+            <div>
+              <label>Member Email</label>
+
+              <input
+                type="email"
+                value={memberEmail}
+                onChange={(event) =>
+                  setMemberEmail(event.target.value)
+                }
+                placeholder="Enter member email"
+                required
+              />
+            </div>
+
+            <button type="submit">
+              Add Member
+            </button>
+          </form>
+
           <h3>Create Task</h3>
 
           <form onSubmit={handleCreateTask}>
@@ -373,9 +525,17 @@ function Dashboard() {
                   setTaskPriority(event.target.value)
                 }
               >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
+                <option value="LOW">
+                  Low
+                </option>
+
+                <option value="MEDIUM">
+                  Medium
+                </option>
+
+                <option value="HIGH">
+                  High
+                </option>
               </select>
             </div>
 
@@ -389,6 +549,30 @@ function Dashboard() {
                   setTaskDueDate(event.target.value)
                 }
               />
+            </div>
+
+            <div>
+              <label>Assign To</label>
+
+              <select
+                value={taskAssignedTo}
+                onChange={(event) =>
+                  setTaskAssignedTo(event.target.value)
+                }
+              >
+                <option value="">
+                  Unassigned
+                </option>
+
+                {members.map((member) => (
+                  <option
+                    key={member._id}
+                    value={member._id}
+                  >
+                    {member.name} ({member.email})
+                  </option>
+                ))}
+              </select>
             </div>
 
             <button type="submit">
@@ -410,9 +594,31 @@ function Dashboard() {
 
                   <p>{task.description}</p>
 
-                  <p>
-                    Status: {task.status}
-                  </p>
+                  <div>
+                    <label>Status: </label>
+
+                    <select
+                      value={task.status}
+                      onChange={(event) =>
+                        handleStatusChange(
+                          task,
+                          event.target.value
+                        )
+                      }
+                    >
+                      <option value="TODO">
+                        TODO
+                      </option>
+
+                      <option value="IN_PROGRESS">
+                        IN PROGRESS
+                      </option>
+
+                      <option value="COMPLETED">
+                        COMPLETED
+                      </option>
+                    </select>
+                  </div>
 
                   <p>
                     Priority: {task.priority}
@@ -427,10 +633,14 @@ function Dashboard() {
                     </p>
                   )}
 
-                  {task.assignedTo && (
+                  {task.assignedTo ? (
                     <p>
                       Assigned to:{" "}
                       {task.assignedTo.name}
+                    </p>
+                  ) : (
+                    <p>
+                      Assigned to: Unassigned
                     </p>
                   )}
 

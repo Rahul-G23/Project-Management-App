@@ -19,3 +19,15 @@ export const deleteProject = async (projectId) => {
   const response = await api.delete(`/projects/${projectId}`);
   return response.data;
 };
+
+export const getProjectMembers = async (projectId) => {
+  const response = await api.get(`/projects/${projectId}/members`);
+  return response.data;
+};
+
+export const addProjectMember = async (projectId, email) => {
+  const response = await api.post(`/projects/${projectId}/members`, {
+    email,
+  });
+  return response.data;
+};
