@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
+
 import {
   getProjects,
   createProject,
   updateProject,
   deleteProject,
 } from "../services/projectService";
+
 import {
   getTasks,
   createTask,
+  updateTask,
+  deleteTask,
 } from "../services/taskService";
 
 function Dashboard() {
@@ -44,6 +48,7 @@ function Dashboard() {
 
   const handleCreateProject = async (event) => {
     event.preventDefault();
+
     setError("");
     setSuccess("");
 
@@ -55,6 +60,7 @@ function Dashboard() {
 
       setProjectName("");
       setProjectDescription("");
+
       setSuccess("Project created successfully.");
 
       await fetchProjects();
@@ -148,6 +154,7 @@ function Dashboard() {
 
   const handleCreateTask = async (event) => {
     event.preventDefault();
+
     setError("");
     setSuccess("");
 
@@ -178,6 +185,59 @@ function Dashboard() {
       setError(
         error.response?.data?.message ||
           "Failed to create task. Please try again."
+      );
+    }
+  };
+
+  const handleUpdateTask = async (task) => {
+    const newTitle = window.prompt(
+      "Enter new task title:",
+      task.title
+    );
+
+    if (!newTitle) {
+      return;
+    }
+
+    try {
+      await updateTask(task._id, {
+        title: newTitle,
+      });
+
+      setSuccess("Task updated successfully.");
+      setError("");
+
+      const data = await getTasks(selectedProject._id);
+      setTasks(data.tasks);
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Failed to update task."
+      );
+    }
+  };
+
+  const handleDeleteTask = async (task) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${task.title}"?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteTask(task._id);
+
+      setSuccess("Task deleted successfully.");
+      setError("");
+
+      const data = await getTasks(selectedProject._id);
+      setTasks(data.tasks);
+    } catch (error) {
+      setError(
+        error.response?.data?.message ||
+          "Failed to delete task."
       );
     }
   };
@@ -373,6 +433,22 @@ function Dashboard() {
                       {task.assignedTo.name}
                     </p>
                   )}
+
+                  <button
+                    onClick={() =>
+                      handleUpdateTask(task)
+                    }
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      handleDeleteTask(task)
+                    }
+                  >
+                    Delete
+                  </button>
                 </div>
               ))}
             </div>
