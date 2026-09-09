@@ -31,3 +31,10 @@ export const addProjectMember = async (projectId, email) => {
   });
   return response.data;
 };
+
+export const removeProjectMember = async (projectId, userId) => {
+  const response = await api.delete(
+    `/projects/${projectId}/members/${userId}`
+  );
+  return response.data;
+};
