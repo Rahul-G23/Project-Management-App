@@ -9,203 +9,242 @@ function MembersPanel({
   canManageMembers = false,
 }) {
   const [email, setEmail] = useState("");
-  const [isAdding, setIsAdding] = useState(false);
-  const [removingMemberId, setRemovingMemberId] = useState("");
-  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [removingId, setRemovingId] = useState("");
+
+  const getMemberId = (member) => {
+    if (!member) {
+      return "";
+    }
+
+    return member._id || member.id || "";
+  };
+
+  const getInitial = (member) => {
+    return member?.name
+      ? member.name.charAt(0).toUpperCase()
+      : "?";
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     const trimmedEmail = email.trim();
 
-    if (!trimmedEmail) {
-      setFormError("Please enter a member email.");
+    if (!trimmedEmail || submitting) {
       return;
     }
 
-    setFormError("");
-    setIsAdding(true);
+    setSubmitting(true);
 
     try {
       await onAddMember(trimmedEmail);
       setEmail("");
-    } catch (error) {
-      setFormError(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Unable to add member."
-      );
+    } catch {
+      // Dashboard handles and displays the error.
     } finally {
-      setIsAdding(false);
+      setSubmitting(false);
     }
   };
 
-  const handleRemoveMember = async (member) => {
+  const handleRemove = async (member) => {
+    const memberId = getMemberId(member);
+
+    if (!memberId || removingId) {
+      return;
+    }
+
     const confirmed = window.confirm(
-      `Remove ${member.name || member.email} from this project?`
+      `Are you sure you want to remove ${member.name || "this member"} from the project?`
     );
 
     if (!confirmed) {
       return;
     }
 
-    setFormError("");
-    setRemovingMemberId(member._id);
+    setRemovingId(memberId);
 
     try {
-      await onRemoveMember(member);
-    } catch (error) {
-      setFormError(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Unable to remove member."
-      );
+      await onRemoveMember(memberId);
+    } catch {
+      // Dashboard handles and displays the error.
     } finally {
-      setRemovingMemberId("");
+      setRemovingId("");
     }
   };
+
+  const owner = members.find(
+    (member) => member.isOwner === true
+  );
 
   return (
     <section
       id="project-members"
-      className="rounded-2xl border border-slate-200 bg-white shadow-sm"
+      className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
     >
-      <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="border-b border-slate-100 p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">
-              Team members
-            </h2>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-900">
+                Team members
+              </h3>
+
+              <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600">
+                {members.length}
+              </span>
+            </div>
 
             <p className="mt-1 text-sm text-slate-500">
-              Manage the people working on this project.
+              Manage the people collaborating on this project.
             </p>
           </div>
 
-          <span className="w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-            {members.length} {members.length === 1 ? "member" : "members"}
-          </span>
+          <div className="rounded-xl bg-slate-50 px-4 py-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+              Access
+            </p>
+
+            <p className="mt-0.5 text-sm font-semibold text-slate-700">
+              {canManageMembers ? "Owner access" : "Member access"}
+            </p>
+          </div>
         </div>
       </div>
 
-      <div className="px-5 py-5 sm:px-6">
+      <div className="space-y-5 p-5 sm:p-6">
         {canManageMembers && (
           <form
             onSubmit={handleSubmit}
-            className="rounded-2xl bg-slate-50 p-4"
+            className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4"
           >
-            <label
-              htmlFor="memberEmail"
-              className="mb-2 block text-sm font-semibold text-slate-700"
-            >
-              Add team member
-            </label>
+            <div className="mb-3">
+              <p className="text-sm font-semibold text-slate-800">
+                Add a team member
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Enter the email address of an existing account.
+              </p>
+            </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <input
-                id="memberEmail"
                 type="email"
                 value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                  setFormError("");
-                }}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="member@example.com"
-                className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                required
+                disabled={submitting || loading}
+                className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 disabled:cursor-not-allowed disabled:bg-slate-50"
               />
 
               <button
                 type="submit"
-                disabled={isAdding}
-                className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-4 focus:ring-indigo-500/20"
+                disabled={
+                  submitting ||
+                  loading ||
+                  !email.trim()
+                }
+                className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isAdding ? "Adding..." : "Add member"}
+                {submitting ? "Adding..." : "Add member"}
               </button>
             </div>
           </form>
         )}
 
-        {formError && (
-          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-            {formError}
-          </p>
-        )}
-
         {error && (
-          <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
+          <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3">
+            <p className="text-sm font-medium text-red-600">
+              {error}
+            </p>
           </div>
         )}
 
-        <div className="mt-5">
-          {loading ? (
-            <div className="rounded-xl border border-slate-100 px-4 py-8 text-center">
-              <p className="text-sm text-slate-500">
-                Loading team members...
-              </p>
-            </div>
-          ) : members.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 px-4 py-8 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-lg text-slate-500">
-                ●
-              </div>
+        {loading ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-600" />
 
-              <h3 className="mt-3 text-sm font-semibold text-slate-700">
-                No team members yet
-              </h3>
-
-              <p className="mt-1 text-sm text-slate-400">
-                Add someone using their registered email address.
-              </p>
+            <p className="mt-3 text-sm font-medium text-slate-500">
+              Loading team members...
+            </p>
+          </div>
+        ) : members.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white text-lg text-slate-400 shadow-sm">
+              ●
             </div>
-          ) : (
-            <div className="space-y-3">
-              {members.map((member) => (
+
+            <h4 className="mt-3 font-semibold text-slate-800">
+              No team members
+            </h4>
+
+            <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
+              Add team members to collaborate on this project.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {members.map((member) => {
+              const memberId = getMemberId(member);
+              const isOwner =
+                member.isOwner === true ||
+                (owner &&
+                  getMemberId(owner) === memberId);
+
+              const isRemoving = removingId === memberId;
+
+              return (
                 <div
-                  key={member._id}
-                  className="flex items-center gap-4 rounded-xl border border-slate-100 bg-white px-4 py-3 transition hover:border-slate-200 hover:bg-slate-50"
+                  key={memberId}
+                  className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
-                    {member.name
-                      ? member.name.charAt(0).toUpperCase()
-                      : "U"}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-slate-800">
-                        {member.name || "Unknown member"}
-                      </p>
-
-                      {member.isOwner && (
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                          Owner
-                        </span>
-                      )}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700">
+                      {getInitial(member)}
                     </div>
 
-                    <p className="truncate text-xs text-slate-400">
-                      {member.email || "No email available"}
-                    </p>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="truncate text-sm font-semibold text-slate-800">
+                          {member.name || "Unknown member"}
+                        </p>
+
+                        {isOwner && (
+                          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
+                            Owner
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="mt-0.5 truncate text-xs text-slate-500">
+                        {member.email || "No email available"}
+                      </p>
+                    </div>
                   </div>
 
-                  {canManageMembers && !member.isOwner && (
+                  {canManageMembers && !isOwner && (
                     <button
                       type="button"
-                      onClick={() => handleRemoveMember(member)}
-                      disabled={removingMemberId === member._id}
-                      className="shrink-0 rounded-lg border border-red-100 bg-white px-3 py-2 text-xs font-semibold text-red-500 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={() => handleRemove(member)}
+                      disabled={isRemoving || Boolean(removingId)}
+                      className="w-full rounded-xl border border-red-100 bg-white px-4 py-2.5 text-sm font-semibold text-red-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-4 focus:ring-red-500/10 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                     >
-                      {removingMemberId === member._id
-                        ? "Removing..."
-                        : "Remove"}
+                      {isRemoving ? "Removing..." : "Remove"}
                     </button>
                   )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!canManageMembers && members.length > 0 && (
+          <p className="text-xs leading-5 text-slate-400">
+            Only the project owner can add or remove team members.
+          </p>
+        )}
       </div>
     </section>
   );

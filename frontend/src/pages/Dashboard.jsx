@@ -383,6 +383,13 @@ function Dashboard() {
       ? 0
       : Math.round((completedTasks / totalTasks) * 100);
 
+  const canManageMembers = Boolean(
+    currentUserId &&
+      selectedProject &&
+      getId(selectedProject.owner).toString() ===
+        currentUserId.toString()
+  );
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
@@ -397,150 +404,245 @@ function Dashboard() {
 
         <main className="min-w-0 flex-1">
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-            <div className="mb-8">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="mb-2 text-sm font-medium text-indigo-600">
-                    Workspace
-                  </p>
+            {/* Dashboard Header */}
+            <section className="mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+              <div className="relative px-5 py-6 sm:px-7 sm:py-7">
+                <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-indigo-50 blur-2xl" />
+                <div className="absolute bottom-0 right-24 h-20 w-20 rounded-full bg-blue-50 blur-2xl" />
 
-                  <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                    Dashboard
-                  </h1>
+                <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="max-w-2xl">
+                    <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" />
+                      Project workspace
+                    </div>
 
-                  <p className="mt-2 text-sm text-slate-500 sm:text-base">
-                    Manage your projects, tasks, and team collaboration.
-                  </p>
-                </div>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                      Dashboard
+                    </h1>
 
-                <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                  <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                    Projects
-                  </p>
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500 sm:text-base">
+                      Manage projects, organize tasks, collaborate with
+                      your team, and keep track of progress from one place.
+                    </p>
+                  </div>
 
-                  <p className="mt-1 text-2xl font-bold text-slate-900">
-                    {projects.length}
-                  </p>
+                  <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-lg font-bold text-indigo-600 shadow-sm">
+                      {projects.length}
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        Projects
+                      </p>
+
+                      <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                        {projects.length === 1
+                          ? "Active workspace"
+                          : "Your workspaces"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            </section>
 
+            {/* Feedback */}
             {error && (
-              <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-600">
+              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3.5 shadow-sm">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-600">
                   !
                 </div>
 
-                <p className="text-sm font-medium text-red-700">
-                  {error}
-                </p>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-red-800">
+                    Something went wrong
+                  </p>
+
+                  <p className="mt-0.5 text-sm text-red-700">
+                    {error}
+                  </p>
+                </div>
               </div>
             )}
 
             {success && (
-              <div className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-600">
+              <div className="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 shadow-sm">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-600">
                   ✓
                 </div>
 
-                <p className="text-sm font-medium text-emerald-700">
-                  {success}
-                </p>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-emerald-800">
+                    Success
+                  </p>
+
+                  <p className="mt-0.5 text-sm text-emerald-700">
+                    {success}
+                  </p>
+                </div>
               </div>
             )}
 
-            <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            {/* Statistics */}
+            <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-500">
                       Total projects
                     </p>
 
-                    <p className="mt-2 text-3xl font-bold text-slate-900">
+                    <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
                       {projects.length}
                     </p>
                   </div>
 
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-xl text-indigo-600">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-xl text-indigo-600 transition group-hover:bg-indigo-100">
                     ▦
                   </div>
                 </div>
+
+                <p className="mt-4 text-xs font-medium text-slate-400">
+                  Workspaces you can access
+                </p>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-500">
                       Total tasks
                     </p>
 
-                    <p className="mt-2 text-3xl font-bold text-slate-900">
+                    <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
                       {totalTasks}
                     </p>
                   </div>
 
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-xl text-blue-600">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-xl text-blue-600 transition group-hover:bg-blue-100">
                     ✓
                   </div>
                 </div>
+
+                <p className="mt-4 text-xs font-medium text-slate-400">
+                  Tasks in selected project
+                </p>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-500">
                       In progress
                     </p>
 
-                    <p className="mt-2 text-3xl font-bold text-slate-900">
+                    <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
                       {inProgressTasks}
                     </p>
                   </div>
 
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-xl text-amber-600">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-xl text-amber-600 transition group-hover:bg-amber-100">
                     ◐
                   </div>
                 </div>
+
+                <p className="mt-4 text-xs font-medium text-slate-400">
+                  Tasks currently being worked on
+                </p>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-500">
                       Completion
                     </p>
 
-                    <p className="mt-2 text-3xl font-bold text-slate-900">
+                    <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
                       {progress}%
                     </p>
                   </div>
 
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-xl text-emerald-600">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-xl text-emerald-600 transition group-hover:bg-emerald-100">
                     ↗
                   </div>
                 </div>
+
+                <p className="mt-4 text-xs font-medium text-slate-400">
+                  Completion of selected project
+                </p>
               </div>
-            </div>
+            </section>
 
-            <section className="mb-8 rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-100 px-5 py-5 sm:px-6">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-lg text-indigo-600">
-                      +
-                    </div>
-
-                    <div>
-                      <h2 className="text-lg font-bold text-slate-900">
-                        Create a project
-                      </h2>
-
-                      <p className="text-sm text-slate-500">
-                        Start a new workspace for your team.
-                      </p>
-                    </div>
+            {/* Create Project */}
+            <section className="mb-8 overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-r from-indigo-50/70 to-white shadow-sm">
+              <div className="flex flex-col gap-5 px-5 py-5 sm:px-6 sm:py-6 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-xl font-semibold text-indigo-600 shadow-sm">
+                    +
                   </div>
+
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">
+                      Create a new project
+                    </h2>
+
+                    <p className="mt-1 text-sm leading-5 text-slate-500">
+                      Start a workspace and bring your team together.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError("");
+                    setSuccess("");
+                    setIsCreateProjectOpen(true);
+                  }}
+                  className="w-full rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 md:w-auto"
+                >
+                  New project
+                </button>
+              </div>
+            </section>
+
+            {/* Projects */}
+            <section id="projects-section" className="mb-8 scroll-mt-24">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold tracking-tight text-slate-900">
+                      Your projects
+                    </h2>
+
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                      {projects.length}
+                    </span>
+                  </div>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Select a project to manage its tasks and team.
+                  </p>
+                </div>
+              </div>
+
+              {projects.length === 0 ? (
+                <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center shadow-sm">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-2xl text-indigo-500">
+                    ▦
+                  </div>
+
+                  <h3 className="mt-5 text-lg font-bold text-slate-800">
+                    No projects yet
+                  </h3>
+
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+                    Create your first project to start organizing work,
+                    assigning tasks, and collaborating with your team.
+                  </p>
 
                   <button
                     type="button"
@@ -549,45 +651,7 @@ function Dashboard() {
                       setSuccess("");
                       setIsCreateProjectOpen(true);
                     }}
-                    className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/20"
-                  >
-                    New project
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            <section id="projects-section" className="mb-8">
-              <div className="mb-5 flex items-end justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">
-                    Your projects
-                  </h2>
-
-                  <p className="mt-1 text-sm text-slate-500">
-                    Select a project to manage tasks and team members.
-                  </p>
-                </div>
-              </div>
-
-              {projects.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-2xl text-slate-400">
-                    ▦
-                  </div>
-
-                  <h3 className="mt-4 text-lg font-semibold text-slate-800">
-                    No projects yet
-                  </h3>
-
-                  <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-                    Create your first project to start organizing your work.
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateProjectOpen(true)}
-                    className="mt-5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                    className="mt-6 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/20"
                   >
                     Create your first project
                   </button>
@@ -610,53 +674,64 @@ function Dashboard() {
               )}
             </section>
 
+            {/* Selected Project Workspace */}
             {selectedProject && (
-              <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="border-b border-slate-100 p-5 sm:p-6">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                      <div className="mb-2 flex items-center gap-2">
+              <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                {/* Workspace Header */}
+                <div className="border-b border-slate-100 bg-gradient-to-r from-white via-white to-indigo-50/40 px-5 py-6 sm:px-7 sm:py-7">
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="mb-3 flex flex-wrap items-center gap-2">
                         <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                          {selectedProject.status || "ACTIVE"} workspace
+                          {selectedProject.status || "ACTIVE"}
+                        </span>
+
+                        <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                          Selected workspace
                         </span>
                       </div>
 
-                      <h2 className="text-2xl font-bold text-slate-900">
+                      <h2 className="break-words text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
                         {selectedProject.name}
                       </h2>
 
-                      <p className="mt-1 text-sm text-slate-500">
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
                         {selectedProject.description ||
-                          "Manage this project's tasks and team."}
+                          "Manage this project's tasks and team collaboration."}
                       </p>
                     </div>
 
-                    <div className="rounded-xl bg-slate-50 px-5 py-4">
-                      <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                    <div className="shrink-0 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                         Task completion
                       </p>
 
-                      <p className="mt-1 text-2xl font-bold text-slate-900">
+                      <p className="mt-1 text-3xl font-bold tracking-tight text-slate-900">
                         {progress}%
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        {completedTasks} of {totalTasks} completed
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-8 p-5 sm:p-6">
-                  <div>
-                    <div className="mb-3 flex items-center justify-between">
+                <div className="space-y-8 p-5 sm:p-7">
+                  {/* Progress */}
+                  <section>
+                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                       <div>
                         <h3 className="text-base font-bold text-slate-900">
                           Project progress
                         </h3>
 
                         <p className="mt-1 text-sm text-slate-500">
-                          {completedTasks} of {totalTasks} tasks completed
+                          Monitor task completion for this project.
                         </p>
                       </div>
 
-                      <span className="text-sm font-bold text-indigo-600">
+                      <span className="text-lg font-bold text-indigo-600">
                         {progress}%
                       </span>
                     </div>
@@ -668,58 +743,74 @@ function Dashboard() {
                       />
                     </div>
 
-                    <div className="mt-3 flex flex-wrap gap-4 text-xs font-medium text-slate-500">
-                      <span>
-                        <span className="font-bold text-slate-800">
+                    <div className="mt-4 grid grid-cols-3 gap-3">
+                      <div className="rounded-xl bg-slate-50 px-3 py-3 text-center">
+                        <p className="text-lg font-bold text-slate-800">
                           {todoTasks}
-                        </span>{" "}
-                        To do
-                      </span>
+                        </p>
 
-                      <span>
-                        <span className="font-bold text-slate-800">
+                        <p className="mt-0.5 text-xs font-medium text-slate-500">
+                          To do
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-amber-50 px-3 py-3 text-center">
+                        <p className="text-lg font-bold text-amber-700">
                           {inProgressTasks}
-                        </span>{" "}
-                        In progress
-                      </span>
+                        </p>
 
-                      <span>
-                        <span className="font-bold text-slate-800">
+                        <p className="mt-0.5 text-xs font-medium text-amber-600">
+                          In progress
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-emerald-50 px-3 py-3 text-center">
+                        <p className="text-lg font-bold text-emerald-700">
                           {completedTasks}
-                        </span>{" "}
-                        Completed
-                      </span>
+                        </p>
+
+                        <p className="mt-0.5 text-xs font-medium text-emerald-600">
+                          Completed
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  </section>
 
-                  <MembersPanel
-                    members={members}
-                    onAddMember={handleAddMember}
-                    onRemoveMember={handleRemoveMember}
-                    loading={membersLoading}
-                    error={membersError}
-                    canManageMembers={
-                      Boolean(
-                        currentUserId &&
-                          getId(selectedProject.owner).toString() ===
-                            currentUserId.toString()
-                      )
-                    }
-                  />
-
-                  <div
-                    id="project-tasks"
-                    className="rounded-2xl border border-slate-200"
+                  {/* Team Members */}
+                  <section
+                    id="project-members"
+                    className="scroll-mt-24"
                   >
-                    <div className="border-b border-slate-100 p-5">
+                    <MembersPanel
+                      members={members}
+                      onAddMember={handleAddMember}
+                      onRemoveMember={handleRemoveMember}
+                      loading={membersLoading}
+                      error={membersError}
+                      canManageMembers={canManageMembers}
+                    />
+                  </section>
+
+                  {/* Tasks */}
+                  <section
+                    id="project-tasks"
+                    className="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200"
+                  >
+                    <div className="border-b border-slate-100 bg-slate-50/50 p-5 sm:p-6">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <h3 className="font-bold text-slate-900">
-                            Project tasks
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-slate-900">
+                              Project tasks
+                            </h3>
+
+                            <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600">
+                              {totalTasks}
+                            </span>
+                          </div>
 
                           <p className="mt-1 text-sm text-slate-500">
-                            Track and update work for this project.
+                            Track, assign, and update work for this project.
                           </p>
                         </div>
 
@@ -730,32 +821,37 @@ function Dashboard() {
                             setSuccess("");
                             setIsCreateTaskOpen(true);
                           }}
-                          className="rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/20"
+                          className="w-full rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 sm:w-auto"
                         >
                           New task
                         </button>
                       </div>
                     </div>
 
-                    <div className="p-5">
+                    <div className="p-4 sm:p-5">
                       {tasks.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white text-xl text-slate-400 shadow-sm">
+                        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center">
+                          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-xl text-slate-400 shadow-sm">
                             ✓
                           </div>
 
-                          <h4 className="mt-3 font-semibold text-slate-800">
+                          <h4 className="mt-4 font-bold text-slate-800">
                             No tasks yet
                           </h4>
 
-                          <p className="mt-1 text-sm text-slate-500">
-                            Create your first task for this project.
+                          <p className="mx-auto mt-1.5 max-w-sm text-sm leading-5 text-slate-500">
+                            Create a task to start tracking work for this
+                            project.
                           </p>
 
                           <button
                             type="button"
-                            onClick={() => setIsCreateTaskOpen(true)}
-                            className="mt-5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                            onClick={() => {
+                              setError("");
+                              setSuccess("");
+                              setIsCreateTaskOpen(true);
+                            }}
+                            className="mt-5 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/20"
                           >
                             Create task
                           </button>
@@ -774,7 +870,7 @@ function Dashboard() {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </section>
                 </div>
               </section>
             )}
@@ -782,6 +878,7 @@ function Dashboard() {
         </main>
       </div>
 
+      {/* Modals */}
       <CreateProjectModal
         isOpen={isCreateProjectOpen}
         onClose={() => setIsCreateProjectOpen(false)}
