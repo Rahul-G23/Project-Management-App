@@ -1,7 +1,9 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://127.0.0.1:5001/api",
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    "http://127.0.0.1:5001/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -18,6 +20,22 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      window.location.href = "/";
+    }
+
     return Promise.reject(error);
   }
 );
