@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   getProjects,
@@ -17,6 +18,8 @@ import {
 } from "../services/taskService";
 
 function Dashboard() {
+  const navigate = useNavigate();
+
   const [projects, setProjects] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -51,6 +54,13 @@ function Dashboard() {
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    navigate("/", { replace: true });
+  };
 
   const handleCreateProject = async (event) => {
     event.preventDefault();
@@ -325,7 +335,13 @@ function Dashboard() {
 
   return (
     <div>
-      <h1>Dashboard</h1>
+      <div>
+        <h1>Dashboard</h1>
+
+        <button onClick={handleLogout}>
+          Logout
+        </button>
+      </div>
 
       <p>Welcome to the Project Management App.</p>
 
