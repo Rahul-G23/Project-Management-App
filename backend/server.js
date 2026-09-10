@@ -17,6 +17,7 @@ const allowedOrigins = [
   "http://localhost:5001",
   "http://127.0.0.1:5001",
   "https://project-management-app-rosy.vercel.app",
+  "https://project-management-app-g72v.onrender.com",
 ];
 
 const corsOptions = {
